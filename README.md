@@ -82,15 +82,15 @@ require("gitlineage").setup({
 })
 ```
 
-| Option             | Default        | Description                                                                                    |
-| ------------------ | -------------- | ---------------------------------------------------------------------------------------------- |
-| `split`            | `"auto"`       | How to open the history buffer. `"auto"` picks vertical for wide windows, horizontal for tall. |
-| `keymap`           | `"<leader>gl"` | Visual mode keymap. Set to `nil` to define your own.                                           |
-| `keys.close`       | `"q"`          | Close the history buffer.                                                                      |
-| `keys.next_commit` | `"]c"`         | Jump to next commit.                                                                           |
-| `keys.prev_commit` | `"[c"`         | Jump to previous commit.                                                                       |
-| `keys.yank_commit` | `"yc"`         | Yank commit SHA when on a commit line.                                                         |
-| `keys.open_diff`   | `"<CR>"`       | Open full commit diff (requires diffview.nvim).                                                |
+| Option             | Default      | Description                                                                                  |
+| ------------------ | ------------ | -------------------------------------------------------------------------------------------- |
+| `split`            | `auto`       | How to open the history buffer. `auto` picks vertical for wide windows, horizontal for tall. |
+| `keymap`           | `<leader>gl` | Visual mode keymap. Set to `nil` to define your own.                                         |
+| `keys.close`       | `q`          | Close the history buffer.                                                                    |
+| `keys.next_commit` | `]c`         | Jump to next commit.                                                                         |
+| `keys.prev_commit` | `[c`         | Jump to previous commit.                                                                     |
+| `keys.yank_commit` | `yc`         | Yank commit SHA when on a commit line.                                                       |
+| `keys.open_diff`   | `<CR>`       | Open full commit diff (requires diffview.nvim).                                              |
 
 ### Custom keymaps
 
