@@ -1,0 +1,199 @@
+*gitlineage.txt*    View git history for selected lines
+
+Author:  rmj
+License: MIT
+
+==============================================================================
+CONTENTS                                                  *gitlineage-contents*
+
+    1. Introduction .......................... |gitlineage-introduction|
+    2. Requirements .......................... |gitlineage-requirements|
+    3. Setup ................................. |gitlineage-setup|
+    4. Configuration ......................... |gitlineage-configuration|
+    5. Usage ................................. |gitlineage-usage|
+    6. Commands .............................. |gitlineage-commands|
+    7. Health check .......................... |gitlineage-health|
+
+==============================================================================
+1. INTRODUCTION                                       *gitlineage-introduction*
+
+gitlineage.nvim shows the git history for a visually selected range of lines.
+It uses `git log -L` under the hood to trace how the selected lines evolved
+through commits.
+
+==============================================================================
+2. REQUIREMENTS                                       *gitlineage-requirements*
+
+Required:
+- Neovim >= 0.7.0
+- Git
+
+Optional:
+- diffview.nvim (https://github.com/sindrets/diffview.nvim)
+  Enables the `open_diff` feature to view full commit diffs.
+
+==============================================================================
+3. SETUP                                                     *gitlineage-setup*
+
+Using lazy.nvim: >lua
+
+    {
+        "rmj/gitlineage.nvim",
+        dependencies = {
+            "sindrets/diffview.nvim", -- optional, for open_diff feature
+        },
+        config = function()
+            require("gitlineage").setup()
+        end
+    }
+<
+
+Using mini.deps: >lua
+
+    local add = require("mini.deps").add
+
+    add("rmj/gitlineage.nvim")
+    add("sindrets/diffview.nvim") -- optional, for open_diff feature
+
+    require("gitlineage").setup()
+<
+
+Using vim.pack.add() (Neovim >= 0.12): >lua
+
+    vim.pack.add("rmj/gitlineage.nvim")
+    vim.pack.add("sindrets/diffview.nvim") -- optional, for open_diff feature
+
+    require("gitlineage").setup()
+<
+
+Using vim-plug: >vim
+
+    call plug#begin()
+
+    Plug 'rmj/gitlineage.nvim'
+    Plug 'sindrets/diffview.nvim' " optional, for open_diff feature
+
+    call plug#end()
+
+    lua require("gitlineage").setup()
+<
+
+==============================================================================
+4. CONFIGURATION                                     *gitlineage-configuration*
+
+Call `setup()` with a table to override defaults: >lua
+
+    require("gitlineage").setup({
+        split = "auto",         -- "vertical", "horizontal", or "auto"
+        keymap = "<leader>gl",  -- set to nil to disable default keymap
+        keys = {
+            close = "q",        -- set to nil to disable
+            next_commit = "]c", -- set to nil to disable
+            prev_commit = "[c", -- set to nil to disable
+            yank_commit = "yc", -- set to nil to disable
+            open_diff = "<CR>", -- set to nil to disable (requires diffview.nvim)
+        },
+    })
+<
+
+                                                        *gitlineage-config-split*
+split ~
+    How to open the history buffer.
+    - "horizontal": opens below the current window
+    - "vertical": opens to the right of the current window
+    - "auto": chooses based on window dimensions (vertical if wide,
+      horizontal if tall)
+    Default: "auto"
+
+                                                       *gitlineage-config-keymap*
+keymap ~
+    The keymap to trigger gitlineage in visual mode. Set to `nil` to disable
+    the default keymap and define your own.
+    Default: "<leader>gl"
+
+                                                        *gitlineage-config-keys*
+keys ~
+    Keymaps for the history buffer. Set any to `nil` to disable.
+
+    keys.close ~
+        Close the history buffer.
+        Default: "q"
+
+    keys.next_commit ~
+        Jump to the next commit in the history.
+        Default: "]c"
+
+    keys.prev_commit ~
+        Jump to the previous commit in the history.
+        Default: "[c"
+
+    keys.yank_commit ~
+        Yank the commit SHA when cursor is on a commit line. Yanks to both
+        the unnamed register (") and the system clipboard (+).
+        Default: "yc"
+
+    keys.open_diff ~
+        Open the full commit diff using diffview.nvim when cursor is on a
+        commit line. Requires diffview.nvim to be installed. If diffview.nvim
+        is not available, a message will be shown with installation instructions.
+        Default: "<CR>"
+
+Custom keymap example: >lua
+
+    require("gitlineage").setup({
+        keymap = "<leader>gh",
+        keys = {
+            close = "<Esc>",
+            next_commit = "<C-n>",
+            prev_commit = "<C-p>",
+        },
+    })
+<
+
+==============================================================================
+5. USAGE                                                     *gitlineage-usage*
+
+1. Enter visual mode (v, V, or <C-v>)
+2. Select the lines you want to inspect
+3. Press the configured keymap (default: <leader>gl)
+4. A split window opens showing the git history for those lines
+5. Navigate and close using buffer keymaps (see below)
+
+                                                      *gitlineage-buffer-keymaps*
+Buffer keymaps ~
+    The following keymaps are available in the history buffer:
+
+    `q`       Close the history buffer
+    `]c`      Jump to next commit
+    `[c`      Jump to previous commit
+    `yc`      Yank commit SHA (when on a commit line)
+    `<CR>`    Open full commit diff (requires diffview.nvim)
+
+==============================================================================
+6. COMMANDS                                               *gitlineage-commands*
+
+                                                      *gitlineage.show_history()*
+gitlineage.show_history() ~
+    Shows the git history for the currently selected lines. This is the
+    function called by the default keymap. Can be called directly: >lua
+
+        require("gitlineage").show_history()
+<
+
+==============================================================================
+7. HEALTH CHECK                                             *gitlineage-health*
+
+Run the health check to verify your setup: >vim
+
+    :checkhealth gitlineage
+<
+
+The health check verifies:
+- Neovim version >= 0.7.0
+- Git is installed and available
+- Current directory is a git repository
+- diffview.nvim availability (optional)
+- Plugin configuration is loaded
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:
