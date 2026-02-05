@@ -21,7 +21,7 @@ Select a range of lines in visual mode and see how they evolved through git comm
 
 ```lua
 {
-    "rmj/gitlineage.nvim",
+    "lionyxml/gitlineage.nvim",
     dependencies = {
         "sindrets/diffview.nvim", -- optional, for open_diff feature
     },
@@ -38,7 +38,7 @@ Using mini.deps:
 ```lua
 local add = require("mini.deps").add
 
-add("rmj/gitlineage.nvim")
+add("lionyxml/gitlineage.nvim")
 add("sindrets/diffview.nvim") -- optional, for open_diff feature
 
 require("gitlineage").setup()
@@ -47,7 +47,7 @@ require("gitlineage").setup()
 Using native vim.pack.add():
 
 ```lua
-vim.pack.add("rmj/gitlineage.nvim")
+vim.pack.add("lionyxml/gitlineage.nvim")
 vim.pack.add("sindrets/diffview.nvim") -- optional, for open_diff feature
 
 require("gitlineage").setup()
@@ -58,7 +58,7 @@ require("gitlineage").setup()
 ```vim
 call plug#begin()
 
-Plug 'rmj/gitlineage.nvim'
+Plug 'lionyxml/gitlineage.nvim'
 Plug 'sindrets/diffview.nvim' " optional, for open_diff feature
 
 call plug#end()
