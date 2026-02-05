@@ -182,3 +182,8 @@ This checks:
 ## License
 
 MIT
+
+## Similar Plugins
+
+- [mini-git](https://github.com/nvim-mini/mini.nvim/blob/main/readmes/mini-git.md) - `MiniGit.show_range_history()`
+- [diffview.nvim](https://github.com/sindrets/diffview.nvim) - `:DiffviewFileHistory`
