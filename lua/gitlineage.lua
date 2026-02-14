@@ -27,6 +27,109 @@ local function is_file_tracked(file)
 	return vim.v.shell_error == 0
 end
 
+local function map_lines_to_head(git_root, rel_file, l1, l2)
+	local diff = vim.fn.systemlist({ "git", "-C", git_root, "diff", "HEAD", "--", rel_file })
+	-- No diff or error means working tree matches HEAD, no mapping needed
+	if vim.v.shell_error ~= 0 or #diff == 0 then
+		return { l1 = l1, l2 = l2, new_lines = {} }
+	end
+
+	-- Parse diff hunks
+	local hunks = {}
+	local h = nil
+	for _, line in ipairs(diff) do
+		local os, oc, ns, nc = line:match("^@@ %-(%d+),?(%d*) %+(%d+),?(%d*) @@")
+		if os then
+			if h then
+				table.insert(hunks, h)
+			end
+			h = {
+				old_start = tonumber(os),
+				old_count = (oc == "" or oc == nil) and 1 or tonumber(oc),
+				new_start = tonumber(ns),
+				new_count = (nc == "" or nc == nil) and 1 or tonumber(nc),
+				lines = {},
+			}
+		elseif h then
+			local c = line:sub(1, 1)
+			if c == " " or c == "+" or c == "-" then
+				table.insert(h.lines, line)
+			end
+		end
+	end
+	if h then
+		table.insert(hunks, h)
+	end
+
+	-- Walk through hunks, mapping new-file line numbers to old-file line numbers
+	local result_old = {}
+	local new_lines = {}
+	local old_num = 0
+	local new_num = 0
+
+	for _, hunk in ipairs(hunks) do
+		-- Fill gap between previous position and this hunk (unchanged lines)
+		local gap_end = hunk.new_start - 1
+		while new_num < gap_end do
+			new_num = new_num + 1
+			old_num = old_num + 1
+			if new_num >= l1 and new_num <= l2 then
+				table.insert(result_old, old_num)
+			end
+			if new_num >= l2 then
+				break
+			end
+		end
+		if new_num >= l2 then
+			break
+		end
+
+		-- Process hunk diff lines
+		for _, dline in ipairs(hunk.lines) do
+			local c = dline:sub(1, 1)
+			if c == " " then
+				new_num = new_num + 1
+				old_num = old_num + 1
+				if new_num >= l1 and new_num <= l2 then
+					table.insert(result_old, old_num)
+				end
+			elseif c == "+" then
+				new_num = new_num + 1
+				if new_num >= l1 and new_num <= l2 then
+					table.insert(new_lines, new_num)
+				end
+			elseif c == "-" then
+				old_num = old_num + 1
+			end
+			if new_num >= l2 then
+				break
+			end
+		end
+		if new_num >= l2 then
+			break
+		end
+	end
+
+	-- Fill remaining lines after last hunk up to l2
+	while new_num < l2 do
+		new_num = new_num + 1
+		old_num = old_num + 1
+		if new_num >= l1 and new_num <= l2 then
+			table.insert(result_old, old_num)
+		end
+	end
+
+	if #result_old == 0 then
+		return { new_lines = new_lines, all_new = true }
+	end
+
+	return {
+		l1 = result_old[1],
+		l2 = result_old[#result_old],
+		new_lines = new_lines,
+	}
+end
+
 local function get_split_cmd()
 	local split = M.config.split
 	if split == "vertical" then
@@ -102,7 +205,33 @@ function M.show_history(opts)
 		return
 	end
 
-	local range_arg = l1 .. "," .. l2 .. ":" .. rel_file
+	-- Buffer must be saved so git diff sees current contents
+	if vim.bo.modified then
+		local choice = vim.fn.confirm(
+			"gitlineage: buffer has unsaved changes. Save before continuing?",
+			"&Save\n&Continue (results may drift if not saved)\n&Abort"
+		)
+		if choice == 1 then
+			vim.cmd("silent write")
+		elseif choice == 3 or choice == 0 then
+			return
+		end
+		-- choice == 2: continue with stale file on disk (line mapping may be inaccurate)
+	end
+
+	-- Map current working-tree line numbers to committed (HEAD) line numbers
+	-- This accounts for uncommitted additions/deletions that shift line numbers
+	local mapping = map_lines_to_head(git_root, rel_file, l1, l2)
+
+	if mapping.all_new then
+		local msg = l1 == l2
+			and "selected line is an uncommitted addition (no history)"
+			or "all selected lines are uncommitted additions (no history)"
+		vim.notify("gitlineage: " .. msg, vim.log.levels.INFO)
+		return
+	end
+
+	local range_arg = mapping.l1 .. "," .. mapping.l2 .. ":" .. rel_file
 	local output = vim.fn.systemlist({ "git", "log", "-L", range_arg })
 	if vim.v.shell_error ~= 0 then
 		vim.notify("gitlineage: git log -L failed", vim.log.levels.WARN)
@@ -112,6 +241,39 @@ function M.show_history(opts)
 	if #output == 0 then
 		vim.notify("gitlineage: no history found for selection", vim.log.levels.INFO)
 		return
+	end
+
+	-- Prepend info about new lines and line mapping if applicable
+	local header = {}
+	if #mapping.new_lines > 0 then
+		local single = #mapping.new_lines == 1
+		local word = single and "Line" or "Lines"
+		local verb = single and "is an" or "are"
+		local noun = single and "uncommitted addition" or "uncommitted additions"
+		table.insert(
+			header,
+			"# " .. word .. " " .. table.concat(mapping.new_lines, ", ") .. " " .. verb .. " " .. noun .. " (no history)"
+		)
+	end
+	if mapping.l1 ~= l1 or mapping.l2 ~= l2 then
+		table.insert(
+			header,
+			"# Mapped selection "
+				.. l1
+				.. "-"
+				.. l2
+				.. " -> "
+				.. mapping.l1
+				.. "-"
+				.. mapping.l2
+				.. " (adjusted for uncommitted changes)"
+		)
+	end
+	if #header > 0 then
+		table.insert(header, "")
+		for i = #header, 1, -1 do
+			table.insert(output, 1, header[i])
+		end
 	end
 
 	local buf = vim.api.nvim_create_buf(false, true)
