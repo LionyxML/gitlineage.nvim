@@ -4,17 +4,19 @@
 
 View git history for selected lines in Neovim.
 
-Select a range of lines in visual mode and see how they evolved through git commits using `git log -L`.
+Select a range of lines in visual mode, use the `:GitLineage` command, or
+press the keymap in normal mode to see how they evolved through git commits
+using `git log -L`.
 
 ## How it Works
 
-1. Select a range of lines in visual mode.
+1. Select a range of lines in visual mode, or just place your cursor on a line.
 
    ![demo_1](https://raw.githubusercontent.com/LionyxML/gitlineage.nvim/refs/heads/media/demo_1.png)
 
 2. Press `<leader>gl` (all bindings are customizable, see the Installation
-   section below). A new split window opens with the git history of the
-   selected lines.
+   section below), or run `:GitLineage`. A new split window opens with the git
+   history of the selected lines (or current line if no selection).
 
    ![demo_2](https://raw.githubusercontent.com/LionyxML/gitlineage.nvim/refs/heads/media/demo_2.png)
 
@@ -119,7 +121,7 @@ require("gitlineage").setup({
 | Option             | Default      | Description                                                                                  |
 | ------------------ | ------------ | -------------------------------------------------------------------------------------------- |
 | `split`            | `auto`       | How to open the history buffer. `auto` picks vertical for wide windows, horizontal for tall. |
-| `keymap`           | `<leader>gl` | Visual mode keymap. Set to `nil` to define your own.                                         |
+| `keymap`           | `<leader>gl` | Normal and visual mode keymap. Set to `nil` to define your own.                              |
 | `keys.close`       | `q`          | Close the history buffer.                                                                    |
 | `keys.next_commit` | `]c`         | Jump to next commit.                                                                         |
 | `keys.prev_commit` | `[c`         | Jump to previous commit.                                                                     |
@@ -143,11 +145,20 @@ require("gitlineage").setup({
 
 ## Usage
 
-1. Enter visual mode (`v`, `V`, or `<C-v>`)
-2. Select the lines you want to inspect
-3. Press `<leader>gl` (or your configured keymap)
-4. A split window opens with the git history
-5. Navigate using buffer keymaps:
+### Using the keymap
+
+1. In **normal mode**, press `<leader>gl` to show history for the current line
+2. In **visual mode**, select lines and press `<leader>gl` to show history for the selection
+
+### Using the command
+
+- `:GitLineage` — show history for the current line
+- `:'<,'>GitLineage` — show history for the visual selection (just type `:GitLineage` while in visual mode)
+- `:10,20GitLineage` — show history for an explicit line range
+
+### Buffer keymaps
+
+Once the history buffer is open, navigate using:
 
 | Key    | Action                                         |
 | ------ | ---------------------------------------------- |

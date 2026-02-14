@@ -17,9 +17,11 @@ CONTENTS                                                  *gitlineage-contents*
 ==============================================================================
 1. INTRODUCTION                                       *gitlineage-introduction*
 
-gitlineage.nvim shows the git history for a visually selected range of lines.
-It uses `git log -L` under the hood to trace how the selected lines evolved
-through commits.
+gitlineage.nvim shows the git history for selected lines in Neovim. It uses
+`git log -L` under the hood to trace how lines evolved through commits.
+
+You can trigger it from normal mode (uses the current line), visual mode
+(uses the selection), or the `:GitLineage` command.
 
 ==============================================================================
 2. REQUIREMENTS                                       *gitlineage-requirements*
@@ -109,8 +111,9 @@ split ~
 
                                                        *gitlineage-config-keymap*
 keymap ~
-    The keymap to trigger gitlineage in visual mode. Set to `nil` to disable
-    the default keymap and define your own.
+    The keymap to trigger gitlineage in normal and visual mode. In normal mode
+    it shows history for the current line; in visual mode for the selection.
+    Set to `nil` to disable the default keymap and define your own.
     Default: "<leader>gl"
 
                                                         *gitlineage-config-keys*
@@ -157,11 +160,20 @@ Custom keymap example: >lua
 ==============================================================================
 5. USAGE                                                     *gitlineage-usage*
 
-1. Enter visual mode (v, V, or <C-v>)
-2. Select the lines you want to inspect
-3. Press the configured keymap (default: <leader>gl)
-4. A split window opens showing the git history for those lines
-5. Navigate and close using buffer keymaps (see below)
+Using the keymap ~
+
+1. In normal mode, press <leader>gl to show history for the current line.
+2. In visual mode, select lines and press <leader>gl to show history for
+   the selection.
+
+Using the command ~
+
+    `:GitLineage`           Show history for the current line.
+    `:'<,'>GitLineage`      Show history for the visual selection.
+    `:10,20GitLineage`      Show history for an explicit line range.
+
+A split window opens showing the git history for the selected lines.
+Navigate and close using buffer keymaps (see below).
 
                                                       *gitlineage-buffer-keymaps*
 Buffer keymaps ~
@@ -176,12 +188,22 @@ Buffer keymaps ~
 ==============================================================================
 6. COMMANDS                                               *gitlineage-commands*
 
+                                                                  *:GitLineage*
+:GitLineage ~
+    Show git history for the current line or a given range.
+
+    `:GitLineage`           History for the current line.
+    `:'<,'>GitLineage`      History for the visual selection.
+    `:10,20GitLineage`      History for lines 10 through 20.
+
                                                       *gitlineage.show_history()*
-gitlineage.show_history() ~
-    Shows the git history for the currently selected lines. This is the
-    function called by the default keymap. Can be called directly: >lua
+gitlineage.show_history({opts}) ~
+    Shows the git history for selected lines. Accepts an optional table with
+    `line1` and `line2` keys. When called without arguments, uses the visual
+    selection (if in visual mode) or the current line. >lua
 
         require("gitlineage").show_history()
+        require("gitlineage").show_history({ line1 = 10, line2 = 20 })
 <
 
 ==============================================================================

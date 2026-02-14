@@ -44,7 +44,9 @@ local function get_split_cmd()
 	end
 end
 
-function M.show_history()
+function M.show_history(opts)
+	opts = opts or {}
+
 	if not is_git_repo() then
 		vim.notify("gitlineage: not inside a git repository", vim.log.levels.WARN)
 		return
@@ -73,8 +75,23 @@ function M.show_history()
 		return
 	end
 
-	local l1 = vim.fn.getpos("v")[2]
-	local l2 = vim.fn.getpos(".")[2]
+	local l1, l2
+
+	if opts.line1 and opts.line2 then
+		-- Called from user command with range
+		l1 = opts.line1
+		l2 = opts.line2
+	elseif vim.fn.mode():match("[vV]") then
+		-- Called from visual mode keymap
+		l1 = vim.fn.getpos("v")[2]
+		l2 = vim.fn.getpos(".")[2]
+	else
+		-- Normal mode: use current line
+		local cur = vim.fn.line(".")
+		l1 = cur
+		l2 = cur
+	end
+
 	if l1 > l2 then
 		l1, l2 = l2, l1
 	end
@@ -160,8 +177,14 @@ function M.show_history()
 				)
 				return
 			end
-			-- Open diffview for this specific commit (SHA^! shows only that commit's changes)
-			vim.cmd("DiffviewOpen " .. sha .. "^!")
+			-- Check if this is the root commit (no parent)
+			local parent = vim.fn.systemlist({ "git", "rev-parse", "--verify", sha .. "^" })
+			if vim.v.shell_error ~= 0 then
+				-- Root commit: diff against empty tree
+				vim.cmd("DiffviewOpen " .. sha)
+			else
+				vim.cmd("DiffviewOpen " .. sha .. "^!")
+			end
 		end, { buffer = buf, silent = true, desc = "Open commit diff (requires diffview.nvim)" })
 	end
 
@@ -173,10 +196,14 @@ function M.setup(opts)
 	M.config = vim.tbl_deep_extend("force", M.config, opts or {})
 
 	if M.config.keymap then
-		vim.keymap.set("v", M.config.keymap, function()
+		vim.keymap.set({ "n", "v" }, M.config.keymap, function()
 			M.show_history()
 		end, { desc = "Git history for selected lines" })
 	end
+
+	vim.api.nvim_create_user_command("GitLineage", function(cmd)
+		M.show_history({ line1 = cmd.line1, line2 = cmd.line2 })
+	end, { range = true, desc = "Show git history for lines (current line if no range)" })
 end
 
 return M
