@@ -22,8 +22,8 @@ local function has_diffview()
 	return ok
 end
 
-local function is_file_tracked(file)
-	vim.fn.systemlist({ "git", "ls-files", "--error-unmatch", file })
+local function is_file_tracked(git_root, file)
+	vim.fn.systemlist({ "git", "-C", git_root, "ls-files", "--error-unmatch", file })
 	return vim.v.shell_error == 0
 end
 
@@ -173,7 +173,7 @@ function M.show_history(opts)
 		rel_file = vim.fn.expand("%")
 	end
 
-	if not is_file_tracked(rel_file) then
+	if not is_file_tracked(git_root, rel_file) then
 		vim.notify("gitlineage: file is not tracked by git", vim.log.levels.WARN)
 		return
 	end
@@ -232,7 +232,7 @@ function M.show_history(opts)
 	end
 
 	local range_arg = mapping.l1 .. "," .. mapping.l2 .. ":" .. rel_file
-	local output = vim.fn.systemlist({ "git", "log", "-L", range_arg })
+	local output = vim.fn.systemlist({ "git", "-C", git_root, "log", "-L", range_arg })
 	if vim.v.shell_error ~= 0 then
 		vim.notify("gitlineage: git log -L failed", vim.log.levels.WARN)
 		return
